@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101916">
+    <title>Pixel Racer</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --ink: #f0f1df;
+            --muted: #9da99a;
+            --panel: #17231e;
+            --edge: #34483b;
+            --lime: #d5fa69;
+            --orange: #ff9d51;
+            --display: "Trebuchet MS", "Arial Rounded MT Bold", sans-serif;
+            --body: "Avenir Next", Avenir, "Segoe UI", sans-serif
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--ink);
+            background: #101916 radial-gradient(#34483b .7px, transparent .7px);
+            background-size: 18px 18px;
+            font-family: var(--body)
+        }
+
+        button,
+        select {
+            font: inherit
+        }
+
+        button {
+            color: inherit
+        }
+
+        .shell {
+            width: min(1160px, calc(100% - 40px));
+            margin: auto;
+            padding: 24px 0 38px
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            margin-bottom: 18px
+        }
+
+        .eyebrow {
+            margin: 0 0 5px;
+            color: var(--lime);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.8px;
+            text-transform: uppercase
+        }
+
+        h1 {
+            margin: 0;
+            font: 900 clamp(28px, 5vw, 48px)/.95 var(--display);
+            letter-spacing: 0
+        }
+
+        .brand {
+            color: var(--orange)
+        }
+
+        .note {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 248px;
+            gap: 14px
+        }
+
+        .stage {
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+            aspect-ratio: 4/3;
+            border: 1px solid #627355;
+            background: #245b39;
+            box-shadow: 0 12px 38px #050a0780
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated
+        }
+
+        .hud {
+            position: absolute;
+            inset: 12px 12px auto;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            pointer-events: none
+        }
+
+        .readout {
+            min-width: 92px;
+            padding: 8px 10px;
+            border: 1px solid #c4d6b044;
+            background: #111914db
+        }
+
+        .readout span {
+            display: block;
+            color: #aebba9;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1.3px;
+            text-transform: uppercase
+        }
+
+        .readout strong {
+            display: block;
+            margin-top: 2px;
+            color: var(--lime);
+            font: 800 17px/1.1 var(--display)
+        }
+
+        .modal {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            background: linear-gradient(90deg, #0c1812dd, #0c1812aa 52%, #0c1812dd)
+        }
+
+        .modal[hidden],
+        .settings[hidden] {
+            display: none
+        }
+
+        .dialog {
+            width: min(390px, 100%);
+            padding: 22px;
+            border: 1px solid #91a873;
+            background: #17231ef2;
+            box-shadow: 8px 8px 0 #0b100dcc;
+            animation: arrive 220ms ease-out both
+        }
+
+        @keyframes arrive {
+            from {
+                opacity: 0;
+                transform: translateY(9px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .tag {
+            color: var(--orange);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1.7px;
+            text-transform: uppercase
+        }
+
+        .dialog h2 {
+            margin: 5px 0 16px;
+            font: 900 29px/1 var(--display)
+        }
+
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 10px
+        }
+
+        .field {
+            display: grid;
+            gap: 5px;
+            color: #b7c2b1;
+            font-size: 11px;
+            font-weight: 800
+        }
+
+        .field select {
+            width: 100%;
+            min-height: 36px;
+            padding: 0 9px;
+            border: 1px solid #4a5b4c;
+            border-radius: 0;
+            background: #0f1914;
+            color: var(--ink)
+        }
+
+        .field input {
+            width: 100%;
+            accent-color: var(--lime)
+        }
+
+        .range-line {
+            display: flex;
+            justify-content: space-between
+        }
+
+        .range-value {
+            color: var(--lime)
+        }
+
+        .wide {
+            grid-column: 1/-1
+        }
+
+        .primary {
+            width: 100%;
+            min-height: 44px;
+            margin-top: 16px;
+            border: 0;
+            background: var(--lime);
+            color: #152018;
+            font-weight: 950;
+            text-transform: uppercase;
+            cursor: pointer
+        }
+
+        .primary:hover {
+            background: #e5ff9e
+        }
+
+        .side {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--edge);
+            background: var(--panel)
+        }
+
+        .section {
+            padding: 16px;
+            border-bottom: 1px solid var(--edge)
+        }
+
+        .section h2 {
+            margin: 0 0 12px;
+            color: var(--lime);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+            color: #c5cec0;
+            font-size: 12px
+        }
+
+        kbd {
+            min-width: 26px;
+            padding: 4px 6px;
+            border: 1px solid #536353;
+            background: #0d1611;
+            color: var(--ink);
+            font: 800 10px var(--body);
+            text-align: center
+        }
+
+        .pair {
+            display: flex;
+            gap: 4px
+        }
+
+        .foot {
+            margin-top: auto;
+            padding: 16px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.55
+        }
+
+        .touch {
+            display: none;
+            justify-content: space-between;
+            margin-top: 12px
+        }
+
+        .touch-group {
+            display: flex;
+            gap: 8px
+        }
+
+        .touch button {
+            width: 58px;
+            height: 48px;
+            border: 1px solid var(--edge);
+            background: #17231e;
+            color: var(--lime);
+            font-size: 18px;
+            font-weight: 900;
+            touch-action: none
+        }
+
+        .touch button:active {
+            background: #32452e
+        }
+
+        @media(max-width:760px) {
+            .shell {
+                width: min(calc(100% - 24px), 600px);
+                padding-top: 17px
+            }
+
+            .layout {
+                grid-template-columns: 1fr
+            }
+
+            .side {
+                display: grid;
+                grid-template-columns: 1fr 1fr
+            }
+
+            .section {
+                border-right: 1px solid var(--edge)
+            }
+
+            .foot {
+                grid-column: 1/-1;
+                margin: 0
+            }
+
+            .touch {
+                display: flex
+            }
+
+            .note {
+                display: none
+            }
+        }
+
+        @media(max-width:480px) {
+            .hud {
+                inset: 6px
+            }
+
+            .readout {
+                min-width: 0;
+                padding: 6px 7px
+            }
+
+            .readout span {
+                font-size: 8px
+            }
+
+            .readout strong {
+                font-size: 14px
+            }
+
+            .dialog {
+                padding: 16px
+            }
+
+            .side {
+                grid-template-columns: 1fr
+            }
+
+            .section {
+                border-right: 0
+            }
+
+            .foot {
+                grid-column: auto
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: .01ms !important
+            }
+        }
+
+        .condition {
+            position: absolute;
+            top: 66px;
+            left: 12px;
+            width: 156px;
+            padding: 7px 9px;
+            border: 1px solid #c4d6b044;
+            background: #111914db
+        }
+
+        .condition-head {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #d4ddce;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase
+        }
+
+        .condition-track {
+            height: 6px;
+            background: #453c35
+        }
+
+        .condition-fill {
+            width: 100%;
+            height: 100%;
+            background: #d5fa69;
+            transition: width 120ms linear, background-color 120ms linear
+        }
+
+        .message {
+            margin: -7px 0 12px;
+            color: #b7c2b1;
+            font-size: 13px;
+            line-height: 1.5
+        }
+
+        .message[hidden] {
+            display: none
+        }
+    </style>
+</head>
+
+<body>
+    <main class="shell">
+        <header>
+            <div>
+                <p class="eyebrow">Arcade / 01</p>
+                <h1>PIXEL <span class="brand">RACER</span></h1>
+            </div>
+            <div class="note">SUNDAY CUP · SEASON 1988</div>
+        </header>
+        <div class="layout">
+            <section class="stage" aria-label="Racing game">
+                <canvas id="game" width="800" height="600" aria-label="Pixel Racer game canvas"></canvas>
+                <div class="hud" aria-live="polite">
+                    <div class="readout"><span id="speed-label">Speed</span><strong id="speed">000 km/h</strong></div>
+                    <div class="readout"><span>Lap</span><strong id="lap">1</strong></div>
+                    <div class="readout"><span>Distance</span><strong id="distance">0 m</strong></div>
+                    <div class="readout"><span>Race time</span><strong id="time">00:00</strong></div>
+                </div>
+                <div class="condition" aria-label="Car condition">
+                    <div class="condition-head"><span>Car condition</span><span id="health-value">100%</span></div>
+                    <div class="condition-track">
+                        <div class="condition-fill" id="health-fill"></div>
+                    </div>
+                </div>
+                <div class="modal" id="menu">
+                    <div class="dialog">
+                        <div class="tag">Choose your setup</div>
+                        <h2 id="title">Ready to race?</h2>
+                        <p class="message" id="message" hidden></p>
+                        <div class="settings" id="settings">
+                            <label class="field">Difficulty<select id="difficulty">
+                                    <option>Easy</option>
+                                    <option selected>Normal</option>
+                                    <option>Hard</option>
+                                </select></label>
+                            <label class="field">Track<select id="track">
+                                    <option>Classic</option>
+                                    <option>Desert</option>
+                                    <option>Night</option>
+                                </select></label>
+                            <label class="field">Car color<select id="car">
+                                    <option value="#f04444">Red</option>
+                                    <option value="#34a9f3">Blue</option>
+                                    <option value="#f6d342">Yellow</option>
+                                    <option value="#bb72ed">Purple</option>
+                                    <option value="#f2f1dc">White</option>
+                                </select></label>
+                            <label class="field"><span class="range-line">Bot racers <output class="range-value"
+                                        id="bot-value">4</output></span><input id="bots" type="range" min="1" max="8"
+                                    value="4"></label>
+                            <label class="field wide"><span class="range-line">Tire grip <output class="range-value"
+                                        id="grip-value">78%</output></span><input id="grip" type="range" min="55"
+                                    max="100" value="78"></label>
+                        </div><button class="primary" id="start">Start race ↗</button>
+                    </div>
+                </div>
+            </section>
+            <aside class="side">
+                <section class="section">
+                    <h2>Driving</h2>
+                    <div class="row"><span>Steer</span><span class="pair"><kbd>←</kbd><kbd>→</kbd></span></div>
+                    <div class="row"><span>Alternate</span><span class="pair"><kbd>A</kbd><kbd>D</kbd></span></div>
+                    <div class="row"><span>Accelerate</span><span class="pair"><kbd>↑</kbd><kbd>W</kbd></span></div>
+                    <div class="row"><span>Brake</span><span class="pair"><kbd>↓</kbd><kbd>S</kbd></span></div>
+                    <div class="row"><span>Handbrake drift</span><kbd>SPACE</kbd></div>
+                </section>
+                <section class="section">
+                    <h2>Race controls</h2>
+                    <div class="row"><span>Pause / resume</span><kbd>P</kbd></div>
+                    <div class="row"><span>Back to options</span><kbd>ESC</kbd></div>
+                </section>
+                <div class="foot">Build speed, turn in, then hold Space to break rear grip. Counter-steer to catch the
+                    slide.</div>
+            </aside>
+        </div>
+        <div class="touch" aria-label="Touch driving controls">
+            <div class="touch-group"><button data-key="arrowleft" aria-label="Steer left">←</button><button
+                    data-key="arrowright" aria-label="Steer right">→</button></div>
+            <div class="touch-group"><button data-key="arrowdown" aria-label="Brake">↓</button><button
+                    data-key="arrowup" aria-label="Accelerate">↑</button><button data-key="space"
+                    aria-label="Handbrake drift">HB</button></div>
+        </div>
+    </main>
+    <script>
+        const canvas = document.querySelector('#game'), ctx = canvas.getContext('2d'), menu = document.querySelector('#menu'), settings = document.querySelector('#settings'), keys = new Set();
+        const tracks = { Classic: { road: '#555a57', line: '#f2f1dc', grass: '#267444', stripe: '#e9544e' }, Desert: { road: '#a87545', line: '#f1d4a0', grass: '#bb9251', stripe: '#f0cb83' }, Night: { road: '#242638', line: '#8ba0ff', grass: '#152c28', stripe: '#f46c79' } };
+        const state = { mode: 'menu', speed: 0, distance: 0, elapsed: 0, health: 100, x: 400, heading: 0, yawRate: 0, lateralSpeed: 0, skids: [], bots: [], last: 0, track: tracks.Classic };
+        const botColors = ['#41d5df', '#ff9d51', '#ef68bb', '#c6f05e', '#f1f1dc'], clamp = (v, a, b) => Math.max(a, Math.min(b, v)), rand = (a, b) => a + Math.random() * (b - a);
+        function car(x, y, color, player = false, angle = 0) { ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = '#111711'; ctx.fillRect(-22, -35, 7, 22); ctx.fillRect(15, -35, 7, 22); ctx.fillRect(-22, 14, 7, 22); ctx.fillRect(15, 14, 7, 22); ctx.fillStyle = color; ctx.fillRect(-17, -38, 34, 76); ctx.fillStyle = '#17231e'; ctx.fillRect(-12, -25, 24, 20); ctx.fillStyle = '#8bc4c9'; ctx.fillRect(-10, -23, 20, 13); ctx.fillStyle = player ? '#fff1a1' : '#ff554c'; ctx.fillRect(-13, 30, 8, 4); ctx.fillRect(5, 30, 8, 4); ctx.fillStyle = '#151a16'; ctx.fillRect(-4, 7, 8, 3); ctx.restore() }
+        function draw() { const t = state.track; ctx.fillStyle = t.grass; ctx.fillRect(0, 0, 800, 600); ctx.fillStyle = '#ffffff0c'; for (let y = 0; y < 600; y += 34) { ctx.fillRect(30, y, 3, 11); ctx.fillRect(748, y + 10, 3, 13) } ctx.fillStyle = t.road; ctx.fillRect(180, 0, 440, 600); let offset = state.distance * 16 % 54; for (let y = -54 + offset; y < 600; y += 54) { ctx.fillStyle = t.stripe; ctx.fillRect(180, y, 9, 27); ctx.fillRect(611, y, 9, 27); ctx.fillStyle = t.line; ctx.fillRect(189, y, 5, 27); ctx.fillRect(606, y, 5, 27) } ctx.fillStyle = t.line; for (let y = -70 + state.distance * 16 % 100; y < 600; y += 100)ctx.fillRect(396, y, 8, 45); for (const mark of state.skids) { ctx.globalAlpha = mark.life * .5; ctx.fillStyle = '#171a17'; ctx.fillRect(mark.x, mark.y, 3, 12) } ctx.globalAlpha = 1; for (const b of state.bots) car(b.x, b.y, b.color); car(state.x, 485, document.querySelector('#car').value, true, state.heading); if (state.mode === 'menu') { ctx.fillStyle = '#10191622'; ctx.fillRect(0, 0, 800, 600) } if (state.mode === 'paused') { ctx.fillStyle = '#101916aa'; ctx.fillRect(0, 0, 800, 600); ctx.fillStyle = '#f0f1df'; ctx.font = 'bold 32px Trebuchet MS'; ctx.textAlign = 'center'; ctx.fillText('PAUSED · PRESS P TO RESUME', 400, 305) } }
+        function formatTime(seconds) { let total = Math.floor(seconds), hours = Math.floor(total / 3600), minutes = Math.floor(total % 3600 / 60), secs = total % 60; return hours ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` }
+        function hud() { document.querySelector('#speed').textContent = `${String(Math.round(state.speed)).padStart(3, '0')} km/h`; document.querySelector('#speed-label').textContent = state.mode === 'race' && (keys.has(' ') || keys.has('space')) && state.speed > 35 ? 'Handbrake drift' : 'Speed'; document.querySelector('#lap').textContent = String(Math.floor(state.distance / 1100) + 1); document.querySelector('#distance').textContent = `${Math.floor(state.distance)} m`; document.querySelector('#time').textContent = formatTime(state.elapsed); document.querySelector('#health-value').textContent = `${Math.ceil(state.health)}%`; const fill = document.querySelector('#health-fill'); fill.style.width = `${state.health}%`; fill.style.backgroundColor = state.health < 35 ? '#ff6557' : '#d5fa69' }
+        function frame(time) { let dt = Math.min((time - state.last) / 1000, .05); state.last = time; if (state.mode === 'race') { const difficulty = document.querySelector('#difficulty').value, max = { Easy: 155, Normal: 220, Hard: 270 }[difficulty], throttle = keys.has('arrowup') || keys.has('w'), brake = keys.has('arrowdown') || keys.has('s'), handbrake = keys.has(' ') || keys.has('space'), steer = Number(keys.has('arrowright') || keys.has('d')) - Number(keys.has('arrowleft') || keys.has('a')), grip = Number(document.querySelector('#grip').value) / 78, ratio = state.speed / max; state.elapsed += dt; state.speed = clamp(state.speed + (throttle ? 72 : 0) * dt - (brake ? 155 : 0) * dt - state.speed * .035 * dt - (handbrake ? 34 : 0) * dt, 0, max); state.yawRate += steer * (1.2 + ratio * 2.6) * (handbrake ? 1.45 : 1) * dt; state.yawRate -= state.heading * (handbrake ? .75 : 4.1 * grip) * dt; state.yawRate *= Math.exp(-(handbrake ? .7 : 3.5 * grip) * dt); state.heading = clamp(state.heading + state.yawRate * dt, -.95, .95); const sideAcceleration = Math.sin(state.heading) * (35 + ratio * 105); state.lateralSpeed += (sideAcceleration - state.lateralSpeed * (handbrake ? .65 : 4.5 * grip)) * dt; state.lateralSpeed = clamp(state.lateralSpeed, -165, 165); state.x += (state.speed * .22 * Math.sin(state.heading) + state.lateralSpeed) * dt; if (state.x < 207 || state.x > 593) { state.speed = Math.max(0, state.speed - 70 * dt); state.lateralSpeed *= -.22; state.heading *= .65 } state.x = clamp(state.x, 207, 593); const drifting = handbrake && state.speed > 45 && Math.abs(state.heading) > .12; if (drifting) { for (const side of [-13, 13]) state.skids.push({ x: state.x + side * Math.cos(state.heading) - 26 * Math.sin(state.heading), y: 485 + side * Math.sin(state.heading) + 26 * Math.cos(state.heading), life: 1 }) } const roadMotion = state.speed / 3.6 * dt * 8; for (const mark of state.skids) { mark.y += roadMotion; mark.life -= dt * .55 } state.skids = state.skids.filter(mark => mark.life > 0).slice(-220); state.distance += state.speed / 3.6 * dt; for (const bot of state.bots) { bot.y += (state.speed / 35 - bot.speed) * dt * 60; if (bot.y > 650) { bot.x = rand(220, 580); bot.y = rand(-450, -80) } if (Math.abs(bot.x - state.x) < 36 && Math.abs(bot.y - 485) < 60) { const impactDamage = clamp(18 + state.speed * .11, 18, 42), knockback = state.x < bot.x ? -1 : 1; state.health = Math.max(0, state.health - impactDamage); state.speed *= .52; state.yawRate += knockback * .7; state.lateralSpeed += knockback * 45; bot.x = rand(220, 580); bot.y = rand(-420, -180); if (state.health === 0) { gameOver(); break } } } } draw(); hud(); requestAnimationFrame(frame) }
+        function start() { state.mode = 'race'; state.speed = 0; state.distance = 0; state.elapsed = 0; state.health = 100; state.x = 400; state.heading = 0; state.yawRate = 0; state.lateralSpeed = 0; state.skids = []; state.track = tracks[document.querySelector('#track').value]; state.bots = Array.from({ length: +document.querySelector('#bots').value }, (_, i) => ({ x: rand(220, 580), y: rand(-600, -80), speed: rand(2, 4.5), color: botColors[i % botColors.length] })); document.querySelector('#message').hidden = true; menu.hidden = true; keys.clear() }
+        function showMenu(title, showSettings) { state.mode = 'menu'; state.speed = 0; keys.clear(); document.querySelector('#title').textContent = title; document.querySelector('#message').hidden = true; settings.hidden = !showSettings; document.querySelector('#start').textContent = showSettings ? 'Start race ↗' : 'Race again ↗'; menu.hidden = false }
+        function gameOver() { state.mode = 'gameover'; state.speed = 0; state.lateralSpeed = 0; keys.clear(); document.querySelector('#title').textContent = 'Car wrecked'; document.querySelector('#message').textContent = 'Your car took too much damage. Ready for another run?'; document.querySelector('#message').hidden = false; settings.hidden = true; document.querySelector('#start').textContent = 'Race again ↗'; menu.hidden = false }
+        document.querySelector('#start').addEventListener('click', start); document.querySelector('#bots').addEventListener('input', e => document.querySelector('#bot-value').value = e.target.value); document.querySelector('#grip').addEventListener('input', e => document.querySelector('#grip-value').value = `${e.target.value}%`);
+        window.addEventListener('keydown', e => { let k = e.key.toLowerCase(); if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault(); if (k === 'escape') { showMenu('Back to options', true); return } if (k === 'p' && (state.mode === 'race' || state.mode === 'paused')) { state.mode = state.mode === 'race' ? 'paused' : 'race'; keys.clear(); return } if (state.mode === 'race') keys.add(k) }); window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase())); window.addEventListener('blur', () => keys.clear());
+        for (const button of document.querySelectorAll('[data-key]')) { let k = button.dataset.key; button.addEventListener('pointerdown', e => { e.preventDefault(); keys.add(k); button.setPointerCapture(e.pointerId) }); for (const n of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(n, () => keys.delete(k)) } requestAnimationFrame(frame);
+    </script>
+</body>
+
+</html>
